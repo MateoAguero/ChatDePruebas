@@ -1,216 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Asistente Clínicas D</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
-        background: #f5f5f5;
-      }
-      #chat {
-        border: 1px solid #ccc;
-        padding: 20px;
-        max-width: 600px;
-        background: white;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        height: 300px;
-        overflow-y: scroll;
-        display: flex; /* Para que las burbujas se alineen correctamente */
-        flex-direction: column; /* Apila las burbujas verticalmente */
-      }
-      .message {
-        margin-bottom: 12px;
-        padding: 8px 12px;
-        border-radius: 10px;
-        max-width: 80%;
-        word-wrap: break-word;
-        box-shadow: 0 1px 1px rgba(0,0,0,0.1); /* Sutil sombra para mejor visual */
-      }
-      .user {
-        background-color: #dcf8c6;
-        align-self: flex-end; /* Alinea burbujas de usuario a la derecha */
-        text-align: right;
-      }
-      .bot {
-        background-color: #eee;
-        align-self: flex-start; /* Alinea burbujas de bot a la izquierda */
-        text-align: left;
-      }
-      .bubble {
-        display: inline-block;
-      }
-      #controls {
-        display: flex;
-        gap: 10px;
-        max-width: 600px;
-      }
-      #mensaje {
-        flex: 1;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
-      button {
-        padding: 10px 20px;
-        font-size: 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        background-color: #007bff;
-        color: white;
-        transition: background-color 0.2s;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      button:active {
-        background-color: #004085;
-      }
-      #audio-indicator {
-        margin-left: 8px;
-        cursor: pointer;
-        font-size: 1.2em;
-        vertical-align: middle;
-        user-select: none; /* Evita que el ícono sea seleccionable como texto */
-      }
-      #audio-indicator:hover {
-        opacity: 0.8;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Asistente Clínicass D</h1>
-    <div id="chat"></div>
-    <div id="controls">
-      <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
-      <button onclick="enviarMensaje()">Enviar</button>
-      <button onclick="startRecognition()">🎤</button>
-    </div>
+<head>
+  <meta charset="UTF-8">
+  <title>Chat con nasdasd8n</title>
+  <style>
+    body { font-family: sans-serif; background: #f2f2f2; padding: 20px; }
+    #chatbox { border: 1px solid #ccc; background: white; padding: 10px; height: 300px; overflow-y: scroll; }
+    .mensaje { margin: 5px 0; }
+    .user { color: blue; }
+    .bot { color: green; }
+  </style>
+</head>
+<body>
+  <h2>Asistente Virtual</h2>
+  <div id="chatbox"></div>
+  <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
+  <button onclick="enviarMensaje()">Enviar</button>
 
-    <script>
-      const chat = document.getElementById("chat");
-      const mensajeInput = document.getElementById("mensaje");
+  <script>
+    const chatbox = document.getElementById("chatbox");
 
-      // Función para agregar mensajes al chat
-      function appendMessage(text, sender, audioUrl = null) {
-        const div = document.createElement("div");
-        div.className = "message " + sender;
-        const bubbleContent = document.createElement("div");
-        bubbleContent.className = "bubble";
-        bubbleContent.textContent = text;
-        div.appendChild(bubbleContent);
+    function agregarMensaje(texto, clase) {
+      const msg = document.createElement("div");
+      msg.className = `mensaje ${clase}`;
+      msg.textContent = texto;
+      chatbox.appendChild(msg);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
 
-        // Si es un mensaje del bot y tiene URL de audio, agregar un ícono de reproducción
-        if (audioUrl && sender === "bot") {
-          const audioIndicator = document.createElement("span");
-          audioIndicator.id = "audio-indicator";
-          audioIndicator.textContent = "🔊"; // Ícono de altavoz
-          audioIndicator.title = "Escuchar mensaje";
-          audioIndicator.onclick = () => {
-            const audio = new Audio(audioUrl);
-            audio.play().catch(e => console.error("Error al reproducir audio:", e));
-          };
-          bubbleContent.appendChild(audioIndicator); // Añade el ícono dentro de la burbuja
-        }
+    async function enviarMensaje() {
+      const input = document.getElementById("mensaje");
+      const texto = input.value;
+      if (!texto) return;
 
-        chat.appendChild(div);
-        chat.scrollTop = chat.scrollHeight; // Desplaza el chat hacia abajo automáticamente
+      agregarMensaje("Tú: " + texto, "user");
+      input.value = "";
+
+      try {
+        const res = await fetch("https://TU_WEBHOOK_URL", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mensaje: texto })
+        });
+
+        const data = await res.json();
+        agregarMensaje("Bot: " + (data.respuesta || JSON.stringify(data)), "bot");
+      } catch (err) {
+        agregarMensaje("Error al enviar: " + err.message, "bot");
       }
-
-      // Función para enviar el mensaje a n8n y manejar la respuesta
-      async function sendToWebhook(text) {
-        // !!! IMPORTANTE: Asegúrate de que este webhook esté configurado en n8n para
-        // recibir peticiones POST y parsear el cuerpo JSON correctamente.
-        const url = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8";
-        try {
-          const res = await fetch(url, {
-            method: "POST", // Método POST
-            headers: { "Content-Type": "application/json" }, // Tipo de contenido JSON
-            body: JSON.stringify({ mensaje: text }) // Envía el mensaje en el cuerpo como JSON
-          });
-
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-
-          const data = await res.json();
-          // Esperamos que la respuesta sea un array en `botMessages` para múltiples partes
-          // o un objeto simple con `botMessage` y opcionalmente `audioUrl`
-          if (data.botMessages && Array.isArray(data.botMessages)) {
-            return data.botMessages; // Retorna el array de partes
-          } else if (data.botMessage) {
-            // Si es una respuesta simple, la convertimos en un array para unificar el manejo
-            return [{ text: data.botMessage, audioUrl: data.audioUrl || null }];
-          } else {
-            console.warn("Respuesta del bot sin 'botMessage' o 'botMessages':", data);
-            return [{ text: "Sin respuesta clara del bot.", audioUrl: null }];
-          }
-        } catch (err) {
-          console.error("Error al contactar al asistente:", err);
-          return [{ text: "Error al contactar al asistente. Por favor, inténtalo de nuevo.", audioUrl: null }];
-        }
-      }
-
-      // Función para enviar mensaje de texto
-      async function enviarMensaje() {
-        const text = mensajeInput.value.trim();
-        if (!text) return;
-
-        appendMessage(text, "user"); // Muestra el mensaje del usuario
-        mensajeInput.value = ""; // Limpia el input
-
-        const respuestas = await sendToWebhook(text); // Obtiene las respuestas del bot (pueden ser múltiples partes)
-        for (const resPart of respuestas) {
-          // Simula un retardo entre las partes para un efecto de escritura secuencial
-          await new Promise(resolve => setTimeout(resolve, 800)); // Espera 800ms por cada parte
-          appendMessage(resPart.text, "bot", resPart.audioUrl); // Muestra cada parte del bot
-        }
-      }
-
-      // Función para iniciar el reconocimiento de voz
-      function startRecognition() {
-        // Verifica si la API de reconocimiento de voz es compatible
-        if (!('webkitSpeechRecognition' in window)) {
-          alert("Lo siento, tu navegador no soporta la API de reconocimiento de voz.");
-          return;
-        }
-
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = "es-ES"; // Idioma español
-        recognition.interimResults = false; // Solo resultados finales
-        recognition.maxAlternatives = 1; // La mejor alternativa
-
-        recognition.start(); // Inicia el reconocimiento
-
-        // Cuando se obtiene un resultado del reconocimiento de voz
-        recognition.onresult = async (event) => {
-          const transcript = event.results[0][0].transcript;
-          appendMessage(transcript, "user"); // Muestra el texto reconocido del usuario
-          const respuestas = await sendToWebhook(transcript); // Envía el texto a n8n
-          for (const resPart of respuestas) {
-            await new Promise(resolve => setTimeout(resolve, 800)); // Retardo simulado
-            appendMessage(resPart.text, "bot", resPart.audioUrl); // Muestra cada parte del bot
-          }
-        };
-
-        // Manejo de errores del reconocimiento de voz
-        recognition.onerror = (event) => {
-          console.error("Reconocimiento de voz falló:", event.error);
-          appendMessage("Hubo un problema con el reconocimiento de voz. Por favor, intenta de nuevo.", "bot");
-        };
-
-        // Indicador de que el micrófono está escuchando
-        recognition.onstart = () => {
-          mensajeInput.placeholder = "Escuchando...";
-        };
-        recognition.onend = () => {
-          mensajeInput.placeholder = "Escribí tu mensaje...";
-        };
-      }
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
