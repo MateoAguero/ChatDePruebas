@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat de Voz con n8n</title>
+    <title>Asistente Clínicas D v1</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -13,62 +13,88 @@
         border: 1px solid #ccc;
         padding: 20px;
         max-width: 600px;
+        height: 400px;
+        overflow-y: auto;
         background: white;
         border-radius: 8px;
+        margin-bottom: 20px;
       }
       .message {
         margin-bottom: 12px;
         padding: 8px 12px;
         border-radius: 10px;
         max-width: 80%;
+        display: inline-block;
       }
       .user {
         background-color: #dcf8c6;
         align-self: flex-end;
+        text-align: right;
       }
       .bot {
         background-color: #eee;
         align-self: flex-start;
       }
-      .bubble {
-        display: inline-block;
+      #controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
       }
-      #speakBtn {
-        margin-top: 20px;
-        padding: 10px 20px;
+      #mensaje {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+      }
+      button {
+        padding: 10px 16px;
+        font-size: 16px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <h1>Asistente Clínicas D</h1>
     <div id="chat"></div>
-    <button id="speakBtn">Hablar</button>
+
+    <div id="controls">
+      <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
+      <button onclick="enviarTexto()">Enviar</button>
+      <button onclick="startRecognition()">🎤</button>
+    </div>
 
     <script>
       const chat = document.getElementById("chat");
-      const speakBtn = document.getElementById("speakBtn");
+      const mensajeInput = document.getElementById("mensaje");
+      const WEBHOOK_URL = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8";
 
       function appendMessage(text, sender) {
         const div = document.createElement("div");
-        div.className = "message " + sender;
-        div.innerHTML = `<div class="bubble">${text}</div>`;
+        div.className = `message ${sender}`;
+        div.innerText = text;
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
       }
 
-      async function sendToWebhook(message) {
-        const url = `https://tu-webhook-url.aqui/webhook?message=${encodeURIComponent(message)}&id=${Date.now()}`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await response.json();
-        return data.botMessage || "Sin respuesta del bot";
+      async function enviarMensaje(msg) {
+        appendMessage(msg, "user");
+        try {
+          const url = `${WEBHOOK_URL}?respuesta1=${encodeURIComponent(msg)}&id=${Date.now()}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          const respuesta = data.botMessage || "Sin respuesta del bot";
+          appendMessage(respuesta, "bot");
+        } catch (e) {
+          appendMessage("Error al contactar al asistente.", "bot");
+          console.error("Error:", e);
+        }
       }
 
-      async function playAudio(url) {
-        const audio = new Audio(url);
-        await audio.play();
+      function enviarTexto() {
+        const texto = mensajeInput.value.trim();
+        if (texto) {
+          enviarMensaje(texto);
+          mensajeInput.value = "";
+        }
       }
 
       function startRecognition() {
@@ -77,24 +103,17 @@
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        recognition.start();
-
         recognition.onresult = async (event) => {
           const transcript = event.results[0][0].transcript;
-          appendMessage(transcript, "user");
-
-          const botResponse = await sendToWebhook(transcript);
-          appendMessage(botResponse, "bot");
-          // Placeholder para audio, reemplaza con URL real de n8n
-          playAudio(`https://your-audio-url.com/${encodeURIComponent(botResponse)}.mp3`);
+          enviarMensaje(transcript);
         };
 
         recognition.onerror = (event) => {
           console.error("Error en reconocimiento:", event.error);
         };
-      }
 
-      speakBtn.addEventListener("click", startRecognition);
+        recognition.start();
+      }
     </script>
   </body>
 </html>
