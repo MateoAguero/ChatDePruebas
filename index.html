@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat de Voz y Texto</title>
+    <title>Asistente Clínicas D</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -18,8 +18,8 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        overflow-y: auto;
         max-height: 70vh;
+        overflow-y: auto;
       }
       .message {
         padding: 10px 14px;
@@ -86,9 +86,13 @@
       }
 
       async function sendToWebhook(message) {
-        const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?message=${encodeURIComponent(message)}&id=${Date.now()}`;
+        const url = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8"; // Usa tu URL de test o producción
         try {
-          const response = await fetch(url);
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mensaje: message }) // 👈 el body se llama mensaje
+          });
           const data = await response.json();
           return data.botMessage || "Sin respuesta del bot";
         } catch (error) {
