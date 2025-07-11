@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Asistente Clínicas D v1</title>
+    <title>Asistente Clíasdasdnicas D v1</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -77,10 +77,13 @@
 
       async function enviarMensaje(msg) {
         appendMessage(msg, "user");
+        console.log("Mensaje enviado:", msg); // Depuración
         try {
-          const url = `${WEBHOOK_URL}?respuesta1=${encodeURIComponent(msg)}&id=${Date.now()}`;
+          const url = `${WEBHOOK_URL}?message=${encodeURIComponent(msg)}&id=${Date.now()}`; // Cambié 'respuesta1' por 'message'
+          console.log("URL construida:", url); // Depuración
           const res = await fetch(url);
           const data = await res.json();
+          console.log("Respuesta del webhook:", data); // Depuración
           const respuesta = data.botMessage || "Sin respuesta del bot";
           appendMessage(respuesta, "bot");
         } catch (e) {
