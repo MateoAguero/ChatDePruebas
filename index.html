@@ -4,12 +4,30 @@
   <meta charset="UTF-8">
   <title>Chat con Audio a n8n</title>
   <style>
-    body { font-family: sans-serif; background: #f2f2f2; padding: 20px; }
-    #chatbox { border: 1px solid #ccc; background: white; padding: 10px; height: 300px; overflow-y: scroll; }
-    .mensaje { margin: 5px 0; }
-    .user { color: blue; }
-    .bot { color: green; }
-    button { margin-top: 5px; }
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    #chatbox {
+      border: 1px solid #ccc;
+      background: white;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+    }
+    .mensaje {
+      margin: 5px 0;
+    }
+    .user {
+      color: blue;
+    }
+    .bot {
+      color: green;
+    }
+    button {
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -25,6 +43,7 @@
     const input = document.getElementById("mensaje");
     const grabarBtn = document.getElementById("grabarBtn");
     let mediaRecorder;
+    let audioChunks = [];
 
     function agregarMensaje(texto, clase) {
       const msg = document.createElement("div");
@@ -73,7 +92,7 @@
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
-      let audioChunks = [];
+      audioChunks = [];
 
       mediaRecorder.ondataavailable = event => {
         if (event.data.size > 0) {
@@ -86,7 +105,7 @@
         const formData = new FormData();
         formData.append("audio", blob, "grabacion.webm");
 
-        agregarMensaje("🎧 Audio enviado", "user");
+        agregarMensaje("🎤 Audio enviado", "user");
 
         try {
           const res = await fetch("https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8", {
