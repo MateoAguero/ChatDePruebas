@@ -57,12 +57,14 @@
       }
 
       async function sendToWebhook(message) {
-        const url = `https://tu-webhook-url.aqui/webhook?message=${encodeURIComponent(message)}&id=${Date.now()}`;
+        console.log("Mensaje enviado al webhook:", message); // Depuración
+        const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?message=${encodeURIComponent(message)}&id=${Date.now()}`;
         const response = await fetch(url, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
+        console.log("Respuesta del webhook:", data); // Depuración
         return data.botMessage || "Sin respuesta del bot";
       }
 
@@ -85,7 +87,6 @@
 
           const botResponse = await sendToWebhook(transcript);
           appendMessage(botResponse, "bot");
-          // Placeholder para audio, reemplaza con URL real de n8n
           playAudio(`https://your-audio-url.com/${encodeURIComponent(botResponse)}.mp3`);
         };
 
