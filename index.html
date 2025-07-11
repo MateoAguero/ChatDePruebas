@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat Clínicas D v3</title>
+    <title>Asistente Clínicas D</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -15,54 +15,58 @@
         max-width: 600px;
         background: white;
         border-radius: 8px;
-        min-height: 300px;
+        margin-bottom: 20px;
+        height: 300px;
+        overflow-y: scroll;
       }
       .message {
         margin-bottom: 12px;
         padding: 8px 12px;
         border-radius: 10px;
         max-width: 80%;
+        word-wrap: break-word;
       }
       .user {
         background-color: #dcf8c6;
+        align-self: flex-end;
         text-align: right;
       }
       .bot {
         background-color: #eee;
+        align-self: flex-start;
+        text-align: left;
       }
       .bubble {
         display: inline-block;
       }
       #controls {
         display: flex;
-        margin-top: 10px;
         gap: 10px;
+        max-width: 600px;
       }
-      input[type="text"] {
+      #mensaje {
         flex: 1;
         padding: 10px;
         font-size: 16px;
       }
       button {
-        padding: 10px 16px;
+        padding: 10px 20px;
         font-size: 16px;
-        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <h1>Asistente Clínicas D</h1>
     <div id="chat"></div>
-
     <div id="controls">
-      <input type="text" id="textInput" placeholder="Escribí tu mensaje..." />
-      <button onclick="handleSend()">Enviar</button>
+      <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
+      <button onclick="enviarMensaje()">Enviar</button>
       <button onclick="startRecognition()">🎤</button>
     </div>
 
     <script>
       const chat = document.getElementById("chat");
-      const textInput = document.getElementById("textInput");
+      const mensajeInput = document.getElementById("mensaje");
 
       function appendMessage(text, sender) {
         const div = document.createElement("div");
@@ -72,26 +76,31 @@
         chat.scrollTop = chat.scrollHeight;
       }
 
-      async function sendToWebhook(message) {
+      async function sendToWebhook(text) {
+        const url = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8";
         try {
-          const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?respuesta1=${encodeURIComponent(message)}&id=${Date.now()}`;
-          const res = await fetch(url); // GET simple
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mensaje: text })
+          });
           const data = await res.json();
           return data.botMessage || "Sin respuesta del bot";
         } catch (err) {
+          console.error("Error al contactar al asistente:", err);
           return "Error al contactar al asistente.";
         }
       }
 
-      async function handleSend() {
-        const message = textInput.value.trim();
-        if (!message) return;
+      async function enviarMensaje() {
+        const text = mensajeInput.value.trim();
+        if (!text) return;
 
-        appendMessage(message, "user");
-        textInput.value = "";
+        appendMessage(text, "user");
+        mensajeInput.value = "";
 
-        const botResponse = await sendToWebhook(message);
-        appendMessage(botResponse, "bot");
+        const respuesta = await sendToWebhook(text);
+        appendMessage(respuesta, "bot");
       }
 
       function startRecognition() {
@@ -105,13 +114,12 @@
         recognition.onresult = async (event) => {
           const transcript = event.results[0][0].transcript;
           appendMessage(transcript, "user");
-
-          const botResponse = await sendToWebhook(transcript);
-          appendMessage(botResponse, "bot");
+          const respuesta = await sendToWebhook(transcript);
+          appendMessage(respuesta, "bot");
         };
 
         recognition.onerror = (event) => {
-          appendMessage("Error: " + event.error, "bot");
+          console.error("Reconocimiento de voz falló:", event.error);
         };
       }
     </script>
