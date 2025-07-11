@@ -41,7 +41,7 @@
       agregarMensaje("Tú: " + texto, "user");
 
       try {
-        const res = await fetch("https://myupgrade.app.n8n.cloud/webhook/XXXXX", {
+        const res = await fetch("https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mensaje: texto })
@@ -83,7 +83,7 @@
         agregarMensaje("🎧 Audio enviado", "user");
 
         try {
-          const res = await fetch("https://myupgrade.app.n8n.cloud/webhook/XXXXX", {
+          const res = await fetch("https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8", {
             method: "POST",
             body: formData
           });
