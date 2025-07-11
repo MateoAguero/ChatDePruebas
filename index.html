@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat Clínicas D v2</title>
+    <title>Asistente Clínicas D v1</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -13,15 +13,18 @@
         border: 1px solid #ccc;
         padding: 20px;
         max-width: 600px;
+        height: 400px;
+        overflow-y: auto;
         background: white;
         border-radius: 8px;
-        min-height: 300px;
+        margin-bottom: 20px;
       }
       .message {
         margin-bottom: 12px;
         padding: 8px 12px;
         border-radius: 10px;
         max-width: 80%;
+        display: inline-block;
       }
       .user {
         background-color: #dcf8c6;
@@ -32,15 +35,12 @@
         background-color: #eee;
         align-self: flex-start;
       }
-      .bubble {
-        display: inline-block;
-      }
       #controls {
         display: flex;
-        margin-top: 10px;
         gap: 10px;
+        align-items: center;
       }
-      input[type="text"] {
+      #mensaje {
         flex: 1;
         padding: 10px;
         font-size: 16px;
@@ -57,43 +57,49 @@
     <div id="chat"></div>
 
     <div id="controls">
-      <input type="text" id="textInput" placeholder="Escribí tu mensaje..." />
-      <button onclick="handleSend()">Enviar</button>
+      <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
+      <button onclick="enviarTexto()">Enviar</button>
       <button onclick="startRecognition()">🎤</button>
     </div>
 
     <script>
       const chat = document.getElementById("chat");
-      const textInput = document.getElementById("textInput");
+      const mensajeInput = document.getElementById("mensaje");
+      const WEBHOOK_URL = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8";
 
       function appendMessage(text, sender) {
         const div = document.createElement("div");
-        div.className = "message " + sender;
-        div.innerHTML = `<div class="bubble">${text}</div>`;
+        div.className = `message ${sender}`;
+        div.innerText = text;
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
       }
 
-      async function sendToWebhook(message) {
+      async function enviarMensaje(msg) {
+        appendMessage(msg, "user");
+        console.log("Mensaje enviado:", msg);
         try {
-          const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?respuesta1=${encodeURIComponent(message)}&id=${Date.now()}`;
-          const res = await fetch(url);
+          const url = `${WEBHOOK_URL}?message=${encodeURIComponent(msg)}&id=${Date.now()}`;
+          console.log("URL construida:", url);
+          const res = await fetch(url, { mode: 'cors' }); // Añadido mode: 'cors' para depuración
+          console.log("Respuesta del fetch:", res.status, res.statusText);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           const data = await res.json();
-          return data.botMessage || "Sin respuesta del bot";
-        } catch (err) {
-          return "Error al contactar al asistente.";
+          console.log("Datos recibidos:", data);
+          const respuesta = data.botMessage || "Sin respuesta del bot";
+          appendMessage(respuesta, "bot");
+        } catch (e) {
+          appendMessage("Error al contactar al asistente: " + e.message, "bot");
+          console.error("Error:", e);
         }
       }
 
-      async function handleSend() {
-        const message = textInput.value.trim();
-        if (!message) return;
-
-        appendMessage(message, "user");
-        textInput.value = "";
-
-        const botResponse = await sendToWebhook(message);
-        appendMessage(botResponse, "bot");
+      function enviarTexto() {
+        const texto = mensajeInput.value.trim();
+        if (texto) {
+          enviarMensaje(texto);
+          mensajeInput.value = "";
+        }
       }
 
       function startRecognition() {
@@ -102,19 +108,16 @@
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        recognition.start();
-
         recognition.onresult = async (event) => {
           const transcript = event.results[0][0].transcript;
-          appendMessage(transcript, "user");
-
-          const botResponse = await sendToWebhook(transcript);
-          appendMessage(botResponse, "bot");
+          enviarMensaje(transcript);
         };
 
         recognition.onerror = (event) => {
-          appendMessage("Error en reconocimiento: " + event.error, "bot");
+          console.error("Error en reconocimiento:", event.error);
         };
+
+        recognition.start();
       }
     </script>
   </body>
