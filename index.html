@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Asistente Clínicasdasdsadasdasdas D</title>
+    <title>Asistente Clínicas D</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -75,11 +75,15 @@
         cursor: pointer;
         font-size: 1.2em;
         vertical-align: middle;
+        user-select: none; /* Evita que el ícono sea seleccionable como texto */
+      }
+      #audio-indicator:hover {
+        opacity: 0.8;
       }
     </style>
   </head>
   <body>
-    <h1>Asistente Clínicas D</h1>
+    <h1>Asistente Clínicass D</h1>
     <div id="chat"></div>
     <div id="controls">
       <input type="text" id="mensaje" placeholder="Escribí tu mensaje..." />
@@ -95,7 +99,10 @@
       function appendMessage(text, sender, audioUrl = null) {
         const div = document.createElement("div");
         div.className = "message " + sender;
-        div.innerHTML = `<div class="bubble">${text}</div>`;
+        const bubbleContent = document.createElement("div");
+        bubbleContent.className = "bubble";
+        bubbleContent.textContent = text;
+        div.appendChild(bubbleContent);
 
         // Si es un mensaje del bot y tiene URL de audio, agregar un ícono de reproducción
         if (audioUrl && sender === "bot") {
@@ -107,7 +114,7 @@
             const audio = new Audio(audioUrl);
             audio.play().catch(e => console.error("Error al reproducir audio:", e));
           };
-          div.querySelector('.bubble').appendChild(audioIndicator); // Añade el ícono dentro de la burbuja
+          bubbleContent.appendChild(audioIndicator); // Añade el ícono dentro de la burbuja
         }
 
         chat.appendChild(div);
@@ -116,11 +123,13 @@
 
       // Función para enviar el mensaje a n8n y manejar la respuesta
       async function sendToWebhook(text) {
-        const url = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8"; // Asegúrate de que este webhook esté configurado para POST y JSON
+        // !!! IMPORTANTE: Asegúrate de que este webhook esté configurado en n8n para
+        // recibir peticiones POST y parsear el cuerpo JSON correctamente.
+        const url = "https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8";
         try {
           const res = await fetch(url, {
-            method: "POST", // Asegúrate de que el método sea POST
-            headers: { "Content-Type": "application/json" }, // Especifica el tipo de contenido como JSON
+            method: "POST", // Método POST
+            headers: { "Content-Type": "application/json" }, // Tipo de contenido JSON
             body: JSON.stringify({ mensaje: text }) // Envía el mensaje en el cuerpo como JSON
           });
 
@@ -129,7 +138,7 @@
           }
 
           const data = await res.json();
-          // Esperamos que la respuesta sea un array en `botMessages`
+          // Esperamos que la respuesta sea un array en `botMessages` para múltiples partes
           // o un objeto simple con `botMessage` y opcionalmente `audioUrl`
           if (data.botMessages && Array.isArray(data.botMessages)) {
             return data.botMessages; // Retorna el array de partes
@@ -191,7 +200,7 @@
         // Manejo de errores del reconocimiento de voz
         recognition.onerror = (event) => {
           console.error("Reconocimiento de voz falló:", event.error);
-          appendMessage("No pude entenderte. Por favor, intenta de nuevo.", "bot");
+          appendMessage("Hubo un problema con el reconocimiento de voz. Por favor, intenta de nuevo.", "bot");
         };
 
         // Indicador de que el micrófono está escuchando
