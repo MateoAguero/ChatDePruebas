@@ -15,12 +15,17 @@
         max-width: 600px;
         background: white;
         border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+        max-height: 70vh;
       }
       .message {
-        margin-bottom: 12px;
-        padding: 8px 12px;
+        padding: 10px 14px;
         border-radius: 10px;
         max-width: 80%;
+        display: inline-block;
       }
       .user {
         background-color: #dcf8c6;
@@ -30,19 +35,25 @@
         background-color: #eee;
         align-self: flex-start;
       }
-      .bubble {
-        display: inline-block;
-      }
       #speakBtn {
         margin-top: 20px;
-        padding: 10px 20px;
+        padding: 12px 24px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      #speakBtn:hover {
+        background-color: #0056b3;
       }
     </style>
   </head>
   <body>
     <h1>Asistente Clínicas D</h1>
     <div id="chat"></div>
-    <button id="speakBtn">Hablar</button>
+    <button id="speakBtn">🎤 Hablar</button>
 
     <script>
       const chat = document.getElementById("chat");
@@ -50,31 +61,43 @@
 
       function appendMessage(text, sender) {
         const div = document.createElement("div");
-        div.className = "message " + sender;
-        div.innerHTML = `<div class="bubble">${text}</div>`;
+        div.className = `message ${sender}`;
+        div.textContent = text;
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
       }
 
       async function sendToWebhook(message) {
-        console.log("Mensaje enviado al webhook:", message); // Depuración
+        console.log("Enviando:", message);
         const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?message=${encodeURIComponent(message)}&id=${Date.now()}`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await response.json();
-        console.log("Respuesta del webhook:", data); // Depuración
-        return data.botMessage || "Sin respuesta del bot";
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          console.log("Respuesta:", data);
+          return data.botMessage || "Sin respuesta del bot";
+        } catch (error) {
+          console.error("Error al contactar webhook:", error);
+          return "Error al contactar al asistente.";
+        }
       }
 
       async function playAudio(url) {
-        const audio = new Audio(url);
-        await audio.play();
+        try {
+          const audio = new Audio(url);
+          await audio.play();
+        } catch (error) {
+          console.error("No se pudo reproducir audio:", error);
+        }
       }
 
       function startRecognition() {
-        const recognition = new webkitSpeechRecognition();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert("Tu navegador no soporta reconocimiento de voz.");
+          return;
+        }
+
+        const recognition = new SpeechRecognition();
         recognition.lang = "es-ES";
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
@@ -87,11 +110,13 @@
 
           const botResponse = await sendToWebhook(transcript);
           appendMessage(botResponse, "bot");
+
+          // Reproducir audio (opcional)
           playAudio(`https://your-audio-url.com/${encodeURIComponent(botResponse)}.mp3`);
         };
 
         recognition.onerror = (event) => {
-          console.error("Error en reconocimiento:", event.error);
+          console.error("Error reconocimiento:", event.error);
         };
       }
 
