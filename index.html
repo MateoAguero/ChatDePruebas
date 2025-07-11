@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat de Voz con n8n</title>
+    <title>Chat de Voz y Texto</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -35,17 +35,28 @@
         background-color: #eee;
         align-self: flex-start;
       }
-      #speakBtn {
+      #controls {
         margin-top: 20px;
-        padding: 12px 24px;
+        display: flex;
+        gap: 10px;
+      }
+      input[type="text"] {
+        flex: 1;
+        padding: 10px;
         font-size: 16px;
-        border: none;
         border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: none;
         background-color: #007bff;
         color: white;
         cursor: pointer;
       }
-      #speakBtn:hover {
+      button:hover {
         background-color: #0056b3;
       }
     </style>
@@ -53,10 +64,17 @@
   <body>
     <h1>Asistente Clínicas D</h1>
     <div id="chat"></div>
-    <button id="speakBtn">🎤 Hablar</button>
+
+    <div id="controls">
+      <input type="text" id="textInput" placeholder="Escribí tu mensaje..." />
+      <button id="sendBtn">Enviar</button>
+      <button id="speakBtn">🎤</button>
+    </div>
 
     <script>
       const chat = document.getElementById("chat");
+      const textInput = document.getElementById("textInput");
+      const sendBtn = document.getElementById("sendBtn");
       const speakBtn = document.getElementById("speakBtn");
 
       function appendMessage(text, sender) {
@@ -68,12 +86,10 @@
       }
 
       async function sendToWebhook(message) {
-        console.log("Enviando:", message);
         const url = `https://myupgrade.app.n8n.cloud/webhook/136ee777-260d-4384-8a4d-79c9282fa1b8?message=${encodeURIComponent(message)}&id=${Date.now()}`;
         try {
           const response = await fetch(url);
           const data = await response.json();
-          console.log("Respuesta:", data);
           return data.botMessage || "Sin respuesta del bot";
         } catch (error) {
           console.error("Error al contactar webhook:", error);
@@ -81,46 +97,43 @@
         }
       }
 
-      async function playAudio(url) {
-        try {
-          const audio = new Audio(url);
-          await audio.play();
-        } catch (error) {
-          console.error("No se pudo reproducir audio:", error);
-        }
+      async function handleMessage(message) {
+        appendMessage(message, "user");
+        const botResponse = await sendToWebhook(message);
+        appendMessage(botResponse, "bot");
       }
 
-      function startRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          alert("Tu navegador no soporta reconocimiento de voz.");
-          return;
+      sendBtn.addEventListener("click", () => {
+        const message = textInput.value.trim();
+        if (message !== "") {
+          textInput.value = "";
+          handleMessage(message);
         }
+      });
+
+      textInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendBtn.click();
+      });
+
+      speakBtn.addEventListener("click", () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Tu navegador no soporta reconocimiento de voz.");
 
         const recognition = new SpeechRecognition();
         recognition.lang = "es-ES";
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
-
         recognition.start();
 
         recognition.onresult = async (event) => {
           const transcript = event.results[0][0].transcript;
-          appendMessage(transcript, "user");
-
-          const botResponse = await sendToWebhook(transcript);
-          appendMessage(botResponse, "bot");
-
-          // Reproducir audio (opcional)
-          playAudio(`https://your-audio-url.com/${encodeURIComponent(botResponse)}.mp3`);
+          handleMessage(transcript);
         };
 
         recognition.onerror = (event) => {
           console.error("Error reconocimiento:", event.error);
         };
-      }
-
-      speakBtn.addEventListener("click", startRecognition);
+      });
     </script>
   </body>
 </html>
